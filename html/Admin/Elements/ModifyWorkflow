@@ -1,0 +1,253 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2002 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+
+<& /Admin/Elements/ModifyTemplateAsWorkflow,
+    URL => $URL, Queue => $Queue, Workflow => $Workflow, WorkflowObj => $WorkflowObj,
+    Name => $WorkflowObj->Name, Description => $WorkflowObj->Description, Content => $Content || $WorkflowObj->Content,
+    ARGShref => \%ARGS &>
+
+<%INIT>
+Abort( loc("Queue is not specified.") ) unless defined($Queue);
+
+my $WorkflowObj = new RT::Template( $session{'CurrentUser'} );
+my ( $title, @results );
+my @Fields = qw(Id Type Queue Owner Description Content AdminCc Depth Role);
+
+# workflow entry business
+if ( exists $ARGS{WFSubmit} ) {
+    if ( $ARGS{WFAction} eq "create" ) {    # commit a new workflow entry
+        $RT::Logger->debug("commit a new workflow entry");
+
+        # default queue is ___Approvals
+        unless ($ARGS{WFQueue}) {
+            my $queue = new RT::Queue( $session{CurrentUser} );
+            $queue->Load('___Approvals');
+            $ARGS{WFQueue} = $queue->Id;
+        }
+
+        # default owner is (poor) root
+        unless ($ARGS{WFOwner} or $ARGS{WFAdminCc}) {
+            my $owner = new RT::User( $session{CurrentUser} );
+            $owner->Load('root');
+            $ARGS{WFOwner} = $owner->Id;
+        }
+
+        push @{ $session{Workflow} },
+	    { map { $_ => $ARGS{"WF$_"} } @Fields };
+        @{ $session{Workflow} } =
+	    sort { $a->{Id} cmp $b->{Id} } @{ $session{Workflow} };
+        $session{Workflow} = [ @{ $session{Workflow} } ];
+    }
+}
+if ( $ARGS{WFAction} eq "modify" ) {
+    if ( exists $ARGS{WFSubmit} ) {     # sumbit to replace an workflow entry
+        $RT::Logger->debug("modify an existing workflow entry");
+        my ($entry) = grep {$_->{Id} =~ "^$ARGS{WFId}"} @{$session{Workflow} };
+        if ($entry) { # only modify existing one
+            $RT::Logger->debug("Found entry to be modified");
+	    $entry->{$_} = $ARGS{"WF$_"} for @Fields;
+            $session{Workflow} = [ @{ $session{Workflow} } ];
+            $entry->{Queue} ||= 0;
+        }
+    } else {                            # recall an existing workflow entry
+        $RT::Logger->debug("retrieve an existing workflow entry ($ARGS{WFId})");
+        my ($entry) = grep {$_->{Id} =~ "^$ARGS{WFId}"} @{$session{Workflow} };
+        if ($entry) {
+            $RT::Logger->debug("found entry");
+	    $entry->{$_} = $ARGS{"WF$_"} for @Fields;
+        }
+    }
+}
+if ( $ARGS{WFAction} eq "delete" ) { # delete an existing workflow entry
+    $RT::Logger->debug("delete an existing workflow entry");
+    @{ $session{Workflow} } =
+      grep { $_->{Id} !~ "^$ARGS{WFId}" } @{ $session{Workflow} };
+    delete $session{Workflow} unless @{ $session{Workflow} };
+    $ARGS{WFAction} = ($ARGS{WFId}) ? "modify" : "create";
+}
+
+# generate the workflow content for workflow
+# (ok, it's ugly.)
+if (exists $session{Workflow} && @{ $session{Workflow} } ) {
+
+# BEGIN ticket
+$Content = << "EOF";
+===Create-Ticket: BEGIN
+### BEGIN ### { %X = () } #####################################################
+Subject: BEGIN #{\$Tickets{TOP}->Id}
+Queue: ___Approvals
+Type: code
+Status: resolved
+Content: BEGIN #{\$Tickets{TOP}->Id}
+ENDOFCONTENT
+
+EOF
+
+# _ConvertToTemplate($ThisEntry, $DependsOn, @next_states)
+sub _ConvertToTemplate {
+    my ($ThisEntry, $DependsOn) = (shift, shift);
+
+    my ($Queue, $Owner, $AdminCc) = (
+	RT::Queue->new($session{CurrentUser}),
+	RT::User->new($session{CurrentUser}),
+	RT::Principal->new($session{CurrentUser}),
+    );
+
+    $Queue->Load( $ThisEntry->{Queue} );
+    $Owner->Load( $ThisEntry->{Owner} );
+    $AdminCc->Load( $ThisEntry->{AdminCc} )
+	unless $ThisEntry->{AdminCc} == -1; # special!
+
+    my $queue_str   = $Queue->Name || '___Approvals';
+    my $owner_str   = $Owner->Name;
+    my $admincc_str = eval { $AdminCc->Object->Id };
+    $owner_str ||= 'root' unless $admincc_str;
+
+    # XXX: implement alias and parsing
+    # XXX: munge AdminCc further using Depth and Role modifiers
+    my ($Depth, $Role) = ($ThisEntry->{Depth}, $ThisEntry->{Role});
+    if ($admincc_str and $Role eq 'Members' and $Depth == 0) {
+	# nothing needs doing, yay
+    }
+    else {
+#	$RT::Logger->error("Bad admincc munging: $admincc_str $Role $Depth");
+#	Abort("Advanced member/admin munging not yet implemented!");
+    }
+
+    my $next_states = join ",", @_;
+
+    my $res = << "EOF";
+===Create-Ticket: T$ThisEntry->{Id}
+EOF
+
+    $res .= ($DependsOn) ? << "EOF"
+### ENTRY POINT ### { "\\nDepends-On: BEGIN\\n" } ###############################
+EOF
+    : <<EOF
+### NON-ENTRY POINT ### { \$X{\$ID} or die } ####################################
+EOF
+    ;
+
+    $res .= << "EOF";
+{join('',map{"Depended-On-By: ".( \$_ ? ( \$X{"T\$_"} = "T\$_" ) : "TOP" ).\$/}do{0,
+### NEXT STATE ################################################################
+    $next_states
+###############################################################################
+}).join(\$/,map"Requestor: \$_",\$Tickets{TOP}->Requestors->MemberEmailAddresses)}
+###############################################################################
+
+Subject: $ThisEntry->{Description}
+Type: \L$ThisEntry->{Type}\E
+EOF
+
+    $res .= "Queue: $queue_str\n"     if $queue_str;
+    $res .= "Owner: $owner_str\n"     if $owner_str;
+    $res .= "AdminCc: $admincc_str\n" if $admincc_str;
+
+    $res .= << "EOF";
+Content-Type: text/plain
+Content:
+$ThisEntry->{Content}
+ENDOFCONTENT
+
+EOF
+
+    return $res;
+}
+
+# _IterateChilds($ThisEntry, $DependOn)
+sub _IterateChilds {
+    my ($ThisEntry, $DependOn) = (shift, shift);
+    my @next_states =
+        grep {$_->{Id} =~ m/^$ThisEntry->{Id}\.\d+$/} @{ $session{Workflow} };
+    my $res;
+
+    $res = _ConvertToTemplate($ThisEntry, $DependOn,
+                                   map { $_->{Id} } @next_states);
+    $res .= _IterateChilds($_, $ThisEntry->{Id}) foreach @next_states;
+
+    return $res;
+}
+
+# Top level tickets
+my @Tops = grep { $_->{Id} =~ m/^\d+$/ } @{ $session{Workflow} };
+
+foreach my $ThisEntry (@Tops) {
+    $Content .= _IterateChilds($ThisEntry, 'Begin');
+}
+    $ARGS{Content} = $Content;
+
+} # end of if
+
+# workflow business
+if ($create) {                           # show a new workflow
+    $title    = loc("Create a workflow");
+    $Workflow = "new";
+
+    # this is a fresh start
+    $RT::Logger->debug("show a new workflow");
+    delete $session{Workflow} if exists $session{Workflow};   # for a fresh test
+         # and make a good start
+    $ARGS{WFId} = 1;
+}
+elsif ( $Workflow eq "new" && exists $ARGS{TemplateSubmit} )
+{        # commit a new workflow
+    $RT::Logger->debug("commit a new workflow");
+    my ( $val, $msg ) = $WorkflowObj->Create( Queue => $Queue, Name => $Name );
+    Abort( loc( "Could not create workflow: [_1]", $msg ) ) unless ($val);
+    push @results, $msg;
+    $title = loc( 'Created workflow [_1]', loc( $WorkflowObj->Name() ) );
+    $Workflow = $WorkflowObj->Id;
+}
+elsif ( $Workflow && exists $ARGS{TemplateSubmit} )
+{        # modify an existing workflow
+    $RT::Logger->debug("modify an existing workflow");
+    if ( $WorkflowObj->Id() ) {
+        my @attribs = qw( Description Content Queue Name);
+        my @aresults = UpdateRecordObject( AttributesRef => \@attribs,
+                                           Object        => $WorkflowObj,
+                                           ARGSRef       => \%ARGS );
+        push @results, @aresults;
+    }
+}
+
+if ( $Workflow ne 'new' ) {
+    $WorkflowObj->Load($Workflow) || Abort( loc('No Workflow') );
+    $title = loc( 'Editing workflow [_1]', loc( $WorkflowObj->Name() ) );
+}
+
+</%INIT>
+
+<%ARGS>
+$URL => 'Workflow.html'
+$Queue => undef
+$Name => undef
+$Description => undef
+$Content => undef
+$create => undef
+$Workflow => undef
+</%ARGS>
+
+

@@ -1,0 +1,27 @@
+Changes
+MANIFEST			This list of files
+META.yml
+Makefile.PL
+README
+SIGNATURE
+html/Admin/Elements/EditWorkflows
+html/Admin/Elements/ModifyTemplateAsWorkflow
+html/Admin/Elements/ModifyWorkflow
+html/Admin/Global/Workflow.html
+html/Admin/Global/Workflows.html
+html/Admin/Queues/Workflow.html
+html/Admin/Queues/Workflows.html
+inc/Module/Install.pm
+inc/Module/Install/Base.pm
+inc/Module/Install/Include.pm
+inc/Module/Install/MakeMaker.pm
+inc/Module/Install/Makefile.pm
+inc/Module/Install/Metadata.pm
+inc/Test/Builder.pm
+inc/Test/More.pm
+lib/RTx/Workflow.pm
+lib/RTx/WorkflowEntry.pm
+po/zh_cn.po
+po/zh_tw.po
+t/0-signature.t
+t/1-basic.t

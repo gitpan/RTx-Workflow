@@ -1,0 +1,102 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2002 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+<& /Admin/Elements/Header, Title => loc("Modify workflow [_1]", $WorkflowObj->id)  &>
+<& /Admin/Elements/SystemTabs, 
+    current_tab => 'Admin/Global/Workflows.html', 
+    current_subtab => $current_subtab, 
+    subtabs => $subtabs, 
+    Title => loc("Modify workflow [_1]", $WorkflowObj->id) &>
+<& /Elements/ListActions, actions => \@results &>
+
+
+<FORM METHOD=POST ACTION="Workflow.html">
+%if ($Create ) {
+<INPUT TYPE=HIDDEN NAME="Workflow" VALUE="new">
+% } else {
+<INPUT TYPE=HIDDEN NAME=Workflow" VALUE="<%$WorkflowObj->Id%>">
+% }
+
+%# hang onto the queue id
+<INPUT TYPE=HIDDEN name="Queue" value="<%$Queue%>">
+
+<& /Admin/Elements/ModifyWorkflow, Name => $WorkflowObj->Name, Description => $WorkflowObj->Description, Content => $WorkflowObj->Content, Queue => $Queue, Workflow => $Workflow &>
+
+<& /Elements/Submit, Caption => loc("Be sure to save your changes"), Reset => 1 &>
+</FORM>
+
+
+
+<%INIT>
+
+my $WorkflowObj = new RT::Template($session{'CurrentUser'});
+my  ($title, @results, $current_subtab);
+
+my $subtabs = {
+		 A => { title => loc('Select workflow'),
+  		     	path => "Admin/Global/Workflows.html"
+			   },
+		 B => { title => loc('New workflow'),
+  		     	path => "Admin/Global/Workflow.html?Create=1&Queue=0",
+			separator => 1,
+			   }
+	      };
+
+
+if ($Create) {
+  $current_subtab = "Admin/Global/Workflow.html?create=1&Queue=0";
+  $title = loc("Create a workflow");
+}
+
+else {
+  if ($Workflow eq 'new') {
+      my ($val, $msg) =  $WorkflowObj->Create(Queue => $Queue, Name => $Name);
+      Abort(loc("Could not create workflow: [_1]", $msg)) unless ($val);
+     push @results, $msg;
+    }
+    else {
+       $WorkflowObj->Load($Workflow) || Abort(loc('No Workflow'));
+    }
+      $title = loc('Modify workflow [_1]', loc($WorkflowObj->Name())); 
+  
+    
+}
+if ($WorkflowObj->Id()) {
+  my @attribs = qw( Description Content Queue Name);
+  my @aresults = UpdateRecordObject( AttributesRef => \@attribs, 
+				     Object => $WorkflowObj, 
+				     ARGSRef => \%ARGS);
+  $current_subtab = "Admin/Global/Workflow.html?Queue=0&Workflow=".$WorkflowObj->Id();
+  $subtabs->{"C"} = { title => loc('Workflow #[_1]', $WorkflowObj->Id()),
+  		     	path => "Admin/Global/Workflow.html?Queue=0&Workflow=".$WorkflowObj->Id(),
+			};
+  push @results, @aresults;
+}
+</%INIT>
+<%ARGS>
+$Queue => undef
+$Workflow => undef
+$Create => undef
+$Name => undef
+</%ARGS>

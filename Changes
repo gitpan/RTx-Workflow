@@ -1,0 +1,21 @@
+____________________________________________________________________________
+[  7971] By: autrijus                              on 2003/09/08  00:46:40
+        Log: * This be 0.00_01, initial cpan prerelease.
+	   ! Makefile.PL
+____________________________________________________________________________
+[  7970] By: autrijus                              on 2003/09/08  00:44:20
+        Log: * initial checkin for non-tabbed workflow editing interface.
+	   + Makefile.PL README po/zh_cn.po po/zh_tw.po t/0-signature.t
+	   + t/1-basic.t
+	  +> html/Admin/Elements/EditWorkflows
+	  +> html/Admin/Elements/ModifyTemplateAsWorkflow
+	  +> html/Admin/Elements/ModifyWorkflow
+	  +> html/Admin/Global/Workflow.html
+	  +> html/Admin/Global/Workflows.html
+	  +> html/Admin/Queues/Workflow.html
+	  +> html/Admin/Queues/Workflows.html
+	   ! lib/RTx/Workflow.pm lib/RTx/WorkflowEntry.pm
+____________________________________________________________________________
+[  7969] By: autrijus                              on 2003/09/08  00:36:46
+        Log: * integ RTx::Workflow.
+	  +> lib/RTx/Workflow.pm lib/RTx/WorkflowEntry.pm

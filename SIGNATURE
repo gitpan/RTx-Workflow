@@ -1,0 +1,49 @@
+This file contains message digests of all files listed in MANIFEST,
+signed via the Module::Signature module, version 0.35.
+
+To verify the content in this distribution, first make sure you have
+Module::Signature installed, then type:
+
+    % cpansign -v
+
+It would check each file's integrity, as well as the signature's
+validity.  If "==> Signature verified OK! <==" is not displayed,
+the distribution may already have been compromised, and you should
+not run its Makefile.PL or Build.PL.
+
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+SHA1 3c59d50ab141f12d6756c5192c7473fa378ea647 Changes
+SHA1 02ddf40b035c7f34d6f2e6ee5647a3408b957d06 MANIFEST
+SHA1 d58eb9a2cdf4671339951faadab5f8e0c4d7618e META.yml
+SHA1 322018242a1368d9a641489a871895013f8697e9 Makefile.PL
+SHA1 109155ea2b0c96eead603b29d04110c9607ccb9f README
+SHA1 f39be0092d7161606a11f1991fd7f562d025b303 html/Admin/Elements/EditWorkflows
+SHA1 3e3b403aa5dbf7f161abc0c6d530e5be8a9f8663 html/Admin/Elements/ModifyTemplateAsWorkflow
+SHA1 dc1ad0b90c2565cedd22bf11e9bb056e61ae6fd9 html/Admin/Elements/ModifyWorkflow
+SHA1 0914d43b1460a66bd4f14a93280870ec6ac38866 html/Admin/Global/Workflow.html
+SHA1 3b6161af5a605eadd75066c2f0666989f85b0d14 html/Admin/Global/Workflows.html
+SHA1 b844eb24a871497efc8f46c0a59ef1a49efaa4ef html/Admin/Queues/Workflow.html
+SHA1 bcbee39dfb400013f411b84f04501810187e9102 html/Admin/Queues/Workflows.html
+SHA1 1090dfe9ee5b3d7a4da2480265c4f1350697769e inc/Module/Install.pm
+SHA1 0e59a6491b7275cacf070218c862a42e8135f6d8 inc/Module/Install/Base.pm
+SHA1 2947a46529e9b64cf5e0291a20332e71edabc546 inc/Module/Install/Include.pm
+SHA1 cb63ee2fceecea6f93cc25bfb5cc122ca6870ed8 inc/Module/Install/MakeMaker.pm
+SHA1 f042d91d7f691e36c8bcb0b495dfc0b9f92576c3 inc/Module/Install/Makefile.pm
+SHA1 5494a21ff1755b95f0d36c788e4816af0c804645 inc/Module/Install/Metadata.pm
+SHA1 4290a41375e931a7265eb287c8eb58591cec7db4 inc/Test/Builder.pm
+SHA1 aede4a85850068b00e25b6b4f10bf1cd11c5b73b inc/Test/More.pm
+SHA1 505b24ac534eb28d302673ae82e56132cb5f7e5a lib/RTx/Workflow.pm
+SHA1 621a94291d142b09ffac989c62d1855206001efd lib/RTx/WorkflowEntry.pm
+SHA1 befc77b75aa0fb2b6b5a579a6d438259a916f545 po/zh_cn.po
+SHA1 36fbe10947c02b078c6878ede9cfec0d51390360 po/zh_tw.po
+SHA1 9837f4a80fcc86dbe6ab9eb289993a4cdcbc932c t/0-signature.t
+SHA1 a4c3e93c496fcd6ba5ab606f2fe3f3d895077165 t/1-basic.t
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.2.1 (FreeBSD)
+
+iD8DBQE/W9HItLPdNzw1AaARAuoGAJ9tqJyTlzRZy2cXcanNgJel2blJfACgqL3B
+ONfa+tg7aFR2z54KwVfZxFY=
+=JPyQ
+-----END PGP SIGNATURE-----

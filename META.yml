@@ -1,0 +1,12 @@
+name: RTx-Workflow
+module_name: RTx::Workflow
+version: 0.00_01
+abstract: RT Workflow Extension
+author: Autrijus Tang (autrijus@autrijus.org)
+distribution_type: module
+build_requires:
+  Test::More: 0
+private:
+  directory:
+    - inc
+generated_by: Module::Install version 0.24
